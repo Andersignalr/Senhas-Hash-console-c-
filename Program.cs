@@ -1,54 +1,63 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Text.RegularExpressions;
+﻿using BCrypt.Net;
+
+
+namespace ProjetoMensagem;
 
 class Program
 {
-    static void Main()
+    public static void Main()
     {
-        Person person = new Person();
+        // Exemplo de registro: Hash da senha
+        string senhaDoUsuario = "senha123";
+        string hashDaSenha = Crypto.Encrypt(senhaDoUsuario);
 
-        // Exemplo de entrada do usuário
-        Console.Write("Digite o nome: ");
-        person.Name = Console.ReadLine();
+        // Exemplo de login: Verificar a senha
+        string senhaInseridaPeloUsuario = "senha123";
+        bool senhaCorreta = Crypto.Verify(senhaInseridaPeloUsuario, hashDaSenha);
 
-        // Validação usando anotações de dados e validação customizada
-        var validationContext = new ValidationContext(person, serviceProvider: null, items: null);
-        var validationResults = new List<ValidationResult>();
-
-        if (Validator.TryValidateObject(person, validationContext, validationResults, validateAllProperties: true))
+        if (senhaCorreta)
         {
-            Console.WriteLine("Dados válidos. Nome: " + person.Name);
+            Console.WriteLine("Login bem-sucedido!");
         }
         else
         {
-            foreach (var validationResult in validationResults)
-            {
-                Console.WriteLine(validationResult.ErrorMessage);
-            }
+            Console.WriteLine("Credenciais inválidas.");
         }
+
     }
 }
 
-class Person : IValidatableObject
+public static class Crypto
 {
-    [Required(ErrorMessage = "O nome é obrigatório.")]
-    [StringLength(20, ErrorMessage = "O nome não pode ter mais de 20 caracteres.")]
-    [RegularExpression("^[a-zA-Z0-9]+$", ErrorMessage = "O nome deve conter apenas letras e números.")]
-    [MinLength(5, ErrorMessage = "O nome deve ter no mínimo 5 caracteres.")]
-    public string Name { get; set; }
-
-    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+    public static string Encrypt(string input)
     {
-        if (string.IsNullOrWhiteSpace(Name))
-        {
-            yield return new ValidationResult("O nome não pode conter espaços em branco.");
-        }
+        if(input != "")
+            return BCrypt.Net.BCrypt.HashPassword(input);
 
-        if (!Name.EndsWith(":"))
-        {
-            yield return new ValidationResult("O nome deve terminar com dois pontos (:).");
-        }
+        return "";
     }
+
+    public static bool Verify(string input, string hash)
+    { 
+        if(input != "" && hash != "") 
+            return BCrypt.Net.BCrypt.Verify(input, hash);
+
+        return false;
+    }
+}
+
+public class Mensagem
+{
+    public int Id;
+    public string? Content;
+    public string? RemetentId;
+    public DateTime? CreatedAt;
+}
+
+public class User
+{
+    public int Id;
+    public string? Name;
+    public string? UserName;
+    public string? Password;
 }
